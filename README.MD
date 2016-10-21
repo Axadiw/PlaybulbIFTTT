@@ -1,6 +1,6 @@
 # Playbulb IFTTT
 
-*Playbulb IFTTT* is a tool that can connect IFTTT (If This, Then That, [ifttt.com]()) to the Playbulb Candles ([http://www.playbulb.com]()).
+*Playbulb IFTTT* is a tool that can connect IFTTT (If This, Then That, [ifttt.com](ifttt.com)) to the Playbulb Candles ([http://www.playbulb.com](http://www.playbulb.com)).
 
 The main problem with this connection is that Playbulb Candles have only Bluetooth LE interface, and isn't directly connected to the internet, so whole integration requires dedicated computer that will connect IFTTT and turn on and off candles when necessary.
 
@@ -192,7 +192,7 @@ for adapter with number 1. You can view list of available adapters by using `hci
 ## Thanks
 
 Lists of candle's characteristics by:
-[https://github.com/Phhere/Playbulb]()
+[https://github.com/Phhere/Playbulb](https://github.com/Phhere/Playbulb)
 
 ##License
 Playbulb IFTTT is released under a MIT License. See LICENSE file for details.
