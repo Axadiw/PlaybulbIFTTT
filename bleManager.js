@@ -36,7 +36,7 @@ class BLEManager {
 	}
 
 	performSingleCandlesLoop(updateColors, turnOn) {
-		if (Object.keys(this.knownCandles).length > 0 && this.areAllCandlesSatisfied(turnOn)) {
+		if (updateColors && Object.keys(this.knownCandles).length > 0 && this.areAllCandlesSatisfied(turnOn)) {
 			return Promise.reject(new Error())
 		}
 

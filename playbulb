@@ -34,7 +34,6 @@ function normalLoop(mode) {
             readColors()
             break;
         case "normal":
-            // code block
             networkManager.start()
             updateColors()
             break;
