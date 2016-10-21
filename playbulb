@@ -1,0 +1,211 @@
+#!/usr/bin/env node
+'use strict';
+
+var keypress = require('keypress')
+var program = require('commander')
+var Promise = require('bluebird')
+var Table = require('cli-table')
+
+var log = require('./logging.js')
+var Candle = require('./candle.js')
+var ConfigurationManager = require('./configurationManager.js')
+var BLEManager = require('./bleManager.js')
+var NetworkManager = require('./networkManager.js')
+var Tools = require("./tools.js")
+
+const colorsLoopDelay = 10000
+
+var currentConfigurationManager = new ConfigurationManager()
+var currentBleManger = new BLEManager()
+var networkManager = new NetworkManager()
+var shouldStopLoop = false
+var turnOnCandles = false
+var currentMode = ""
+
+networkManager.turnOnCandlesCallback = function (value) {
+    turnOnCandles = value
+}
+
+function normalLoop(mode) {
+    currentBleManger.knownCandles = currentConfigurationManager.currentConfiguration.candles
+    currentMode = mode
+    switch (mode) {
+        case "readonly":
+            readColors()
+            break;
+        case "normal":
+            // code block
+            networkManager.start()
+            updateColors()
+            break;
+        case "forceOn":
+            turnOnCandles = true
+            updateColors()
+            break;
+        case "forceOff":
+            turnOnCandles = false
+            updateColors()
+            break;
+        default:
+            log.error('Wrong mode: ' + mode);
+            process.exit()
+    }
+}
+
+function updateColors() {
+    log.info("Updating colors...")
+
+    Tools.promiseWhile(shouldStopLoop, updateColorsLoop)
+}
+
+function readColors() {
+    log.info("Reading colors...")
+    currentBleManger.knownCandles = currentConfigurationManager.currentConfiguration.candles
+    Tools.promiseWhile(shouldStopLoop, readColorsLoop)
+}
+
+function updateColorsLoop() {
+    return performSingleCandlesLoopWithAction(true)
+}
+
+function readColorsLoop() {
+    return performSingleCandlesLoopWithAction(false)
+}
+
+function performSingleCandlesLoopWithAction(shouldUpdateColors) {
+    return currentBleManger.performSingleCandlesLoop(shouldUpdateColors, turnOnCandles)
+        .then(function (candles) {
+            var sortedCandlesArray = Tools.sortCandlesDict(candles)
+            console.log('\x1Bc')
+
+            log.info('Mode: ' + currentMode)
+            log.info('Readonly: ' + !shouldUpdateColors)
+
+            if (shouldUpdateColors) {
+                log.info('Desired candles state: ' + (turnOnCandles ? "on" : "off"))
+            }
+
+            var table = new Table({
+                head: ['NAME', 'CURRENT COLOR', 'DESIRED COLOR', 'BATTERY', 'UPDATE DATE']
+                , colWidths: [40, 15, 15, 10, 30]
+            })
+
+            for (var candle of sortedCandlesArray) {
+                table.push([candle.name || "", candle.currentColor || "", candle.desiredColor || "", candle.battery || "", candle.updateDate || ""])
+            }
+
+            log.info("\n" + table.toString())
+
+            if (shouldStopLoop) {
+                process.exit()
+            }
+
+            log.info("Press 's' to stop...")
+
+            return Tools.exportBatteryStatesToCSV(sortedCandlesArray)
+                .then(function () {
+                    return sortedCandlesArray
+                })
+        })
+        .then(function (candles) {
+            return currentConfigurationManager.addCandles(candles)
+        })
+        .catch(function () { })
+        .delay(colorsLoopDelay)
+}
+
+function showConfig() {
+    var defaultColor = currentConfigurationManager.currentConfiguration.defaultColor
+    var candles = Tools.sortCandlesDict(currentConfigurationManager.currentConfiguration.candles)
+
+    log.info('Default color: ' + defaultColor)
+
+    var table = new Table({
+        head: ['ID', 'NAME', 'DESIRED COLOR']
+        , colWidths: [40, 30, 15]
+    });
+
+    for (var candle of candles) {
+        table.push([candle.id || "", candle.name || "", candle.desiredColor || ""])
+    }
+    log.info("\n" + table.toString())
+
+    process.exit()
+}
+
+function setDefaultColor(defaultColor) {
+    currentConfigurationManager.setDefaultColor(defaultColor)
+        .then(function () {
+            log.info('Did set default color to ' + defaultColor);
+        })
+        .finally(function () {
+            process.exit()
+        })
+}
+
+function setDesiredColor(candleId, desiredColor) {
+    currentConfigurationManager.currentConfiguration.candles[candleId].desiredColor = desiredColor
+    currentConfigurationManager.save()
+        .then(function () {
+            log.info('Did set desired color for ' + candleId + 'to ' + desiredColor);
+        })
+        .finally(function () {
+            process.exit()
+        })
+}
+
+keypress(process.stdin);
+process.stdin.on('keypress', function (ch, key) {
+    if (key.name == 's') {
+        log.info("Will stop in a moment...")
+        process.stdin.pause();
+        shouldStopLoop = true
+    }
+});
+
+program
+    .version('0.0.1')
+
+program
+    .command('showConfiguration')
+    .description('Shows current configuration')
+    .action(showConfig);
+
+program
+    .command('setDefaultColor <color>')
+    .description('Sets default color for newly discovered candles')
+    .action(setDefaultColor);
+
+program
+    .command('setColor <candleID> <color>')
+    .description('Updates target color for particular candle')
+    .action(setDesiredColor);
+
+program
+    .command('run <mode>')
+    .description('starts normal execution. Available modes: normal / readonly / forceOn / forceOff')
+    .action(normalLoop);
+
+currentConfigurationManager.load()
+    .then(function () {
+        // setup using configuration
+        currentBleManger.defaultColor = currentConfigurationManager.currentConfiguration.defaultColor
+    })
+    .then(function () {
+        // setup network manager
+        return networkManager.load()
+    })
+    .then(function () {
+        // wait for BLE powered on
+        return currentBleManger.isPoweredOnAsync()
+    })
+    .then(function () {
+        // Go!
+        process.stdin.setRawMode(true);
+        process.stdin.resume();
+        program.parse(process.argv);
+
+        if (!process.argv.slice(2).length) {
+            program.help()
+        }
+    })

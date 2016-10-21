@@ -1,0 +1,6 @@
+candlesBattery.log
+candles.log
+node_modules
+battery.csv
+networkConfiguration.json
+defaultConfiguration.json

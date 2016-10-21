@@ -1,0 +1,27 @@
+{
+  "name": "playbulb_ifttt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {
+    "bluebird": "3.4.6",
+    "noble": "1.7.0",
+    "console-stamp": "0.2.2",
+    "json-fs-store": "1.0.1",
+    "loglevel": "1.4.1",
+    "commander": "2.9.0",
+    "keypress": "0.2.1",
+    "cli-table": "0.3.1",
+    "babyparse": "0.4.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@gitlab.axadiw.pl:2222/axadiw/PlaybultIFTTT.git"
+  },
+  "author": "Michał Mizera",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.14.0",
+    "babel-preset-es2015": "^6.14.0"
+  }
+}
