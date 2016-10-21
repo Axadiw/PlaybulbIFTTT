@@ -95,10 +95,6 @@ function performSingleCandlesLoopWithAction(shouldUpdateColors) {
 
             log.info("\n" + table.toString())
 
-            if (shouldStopLoop) {
-                process.exit()
-            }
-
             log.info("Press 's' to stop...")
 
             return Tools.exportBatteryStatesToCSV(sortedCandlesArray)
@@ -110,6 +106,11 @@ function performSingleCandlesLoopWithAction(shouldUpdateColors) {
             return currentConfigurationManager.addCandles(candles)
         })
         .catch(function () { })
+        .then(function () {
+            if (shouldStopLoop) {
+                process.exit()
+            }
+        })
         .delay(colorsLoopDelay)
 }
 
