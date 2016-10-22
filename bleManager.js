@@ -10,6 +10,7 @@ const colorsCharacteristicUUID = "fffc"
 const batteryCharacteristicUUID = "2a19"
 const batteryServiceUUID = "180f"
 const playbulbServiceUUID = "ff02"
+const operationsDelayMilliseconds = 2000
 const disconnectDelayMilliseconds = 10000
 const scanningForPeripheralsTime = 20000
 const performBLEActionTimeout = 10000
@@ -195,11 +196,13 @@ class BLEManager {
 	performActionWithColorCharacteristic(peripheral, serviceUUID, characteristicUUID, action) {
 		return peripheral.connectAsync()
 			.timeout(performBLEActionTimeout)
+			.delay(operationsDelayMilliseconds)			
 			.then(function () {
 				log.debug("Connected, will discover service " + serviceUUID + " and characteristic " + characteristicUUID + " for " + peripheral.advertisement.localName)
 				return peripheral.discoverSomeServicesAndCharacteristicsAsync([serviceUUID], [characteristicUUID])
 			})
 			.timeout(performBLEActionTimeout)
+			.delay(operationsDelayMilliseconds)
 			.map(function (services, characteristics) {
 				log.debug("Discovered services and characteristics for " + peripheral.advertisement.localName)
 				for (let characteristic of services.characteristics) {
@@ -214,6 +217,7 @@ class BLEManager {
 				log.debug("Will disconnect from " + peripheral.advertisement.localName)
 				return peripheral.disconnectAsync()
 			})
+			.delay(operationsDelayMilliseconds)
 	}
 }
 
