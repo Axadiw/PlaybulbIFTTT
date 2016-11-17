@@ -61,7 +61,13 @@ class BLEManager {
 				foundPeripherals += 1
 				var candle = thisManager.candleForPeripheral(peripheral)
 
-				thisManager.readBatteryForPeripheral(peripheral)
+				peripheral.connectAsync()
+					.timeout(performBLEActionTimeout)
+					.delay(operationsDelayMilliseconds)
+					.then(function () {
+						log.debug("Connected, will discover service " + serviceUUID + " and characteristic " + characteristicUUID + " for " + peripheral.advertisement.localName)
+						return thisManager.readBatteryForPeripheral(peripheral)
+					})
 					.then(function (battery) {
 						if (battery) {
 							candle.battery = battery.readInt8()
@@ -85,6 +91,11 @@ class BLEManager {
 							var utc = new Date().toLocaleString("en-US", { hour12: false })
 							candle.updateDate = utc
 						}
+					})
+					.delay(disconnectDelayMilliseconds)
+					.then(function () {
+						log.debug("Will disconnect from " + peripheral.advertisement.localName)
+						return peripheral.disconnectAsync()
 					})
 					.finally(function () {
 						foundPeripherals -= 1
@@ -194,13 +205,7 @@ class BLEManager {
 	}
 
 	performActionWithColorCharacteristic(peripheral, serviceUUID, characteristicUUID, action) {
-		return peripheral.connectAsync()
-			.timeout(performBLEActionTimeout)
-			.delay(operationsDelayMilliseconds)			
-			.then(function () {
-				log.debug("Connected, will discover service " + serviceUUID + " and characteristic " + characteristicUUID + " for " + peripheral.advertisement.localName)
-				return peripheral.discoverSomeServicesAndCharacteristicsAsync([serviceUUID], [characteristicUUID])
-			})
+		return peripheral.discoverSomeServicesAndCharacteristicsAsync([serviceUUID], [characteristicUUID])
 			.timeout(performBLEActionTimeout)
 			.delay(operationsDelayMilliseconds)
 			.map(function (services, characteristics) {
@@ -212,12 +217,6 @@ class BLEManager {
 				}
 			})
 			.then(action)
-			.delay(disconnectDelayMilliseconds)
-			.then(function () {
-				log.debug("Will disconnect from " + peripheral.advertisement.localName)
-				return peripheral.disconnectAsync()
-			})
-			.delay(operationsDelayMilliseconds)
 	}
 }
 
