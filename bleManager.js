@@ -97,6 +97,7 @@ class BLEManager {
 						log.debug("Will disconnect from " + peripheral.advertisement.localName)
 						return peripheral.disconnectAsync()
 					})
+					.timeout(performBLEActionTimeout)
 					.finally(function () {
 						foundPeripherals -= 1
 						finishFunc()
