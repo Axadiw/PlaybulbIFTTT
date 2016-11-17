@@ -53,15 +53,10 @@ class BLEManager {
 				}
 			}
 
-			var handleDiscovery = function (peripheral) {
-				var peripheral = Promise.promisifyAll(peripheral)
-				log.debug('Found device with local name: ' + peripheral.advertisement.localName);
-				log.debug('advertising the following service uuid\'s: ' + peripheral.advertisement.serviceUuids);
-
-				foundPeripherals += 1
+			var processSinglePeripheralFunc = function (peripheral) {
 				var candle = thisManager.candleForPeripheral(peripheral)
 
-				peripheral.connectAsync()
+				return peripheral.connectAsync()
 					.timeout(performBLEActionTimeout)
 					.delay(operationsDelayMilliseconds)
 					.then(function () {
@@ -104,6 +99,16 @@ class BLEManager {
 					})
 			}
 
+			var foundPeripheralsPromisesArray = []
+			var handleDiscovery = function (peripheral) {
+				var peripheral = Promise.promisifyAll(peripheral)
+				log.debug('Found device with local name: ' + peripheral.advertisement.localName);
+				log.debug('advertising the following service uuid\'s: ' + peripheral.advertisement.serviceUuids);
+
+				foundPeripherals += 1
+				foundPeripheralsPromisesArray.push(processSinglePeripheralFunc(peripheral))
+			}
+
 			thisManager.noble.on('discover', handleDiscovery)
 
 			thisManager.noble.startScanning([playbulbServiceUUID], false)
@@ -113,6 +118,12 @@ class BLEManager {
 				thisManager.noble.stopScanning()
 				thisManager.noble.removeListener("discover", handleDiscovery)
 				finishFunc()
+
+				Promise.each(foundPeripheralsPromisesArray, function (result) {
+					log.debug("Processed")
+				})
+					.catch(function () { })
+
 			}, scanningForPeripheralsTime);
 		})
 	}
