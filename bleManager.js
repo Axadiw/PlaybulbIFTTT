@@ -98,7 +98,7 @@ class BLEManager {
 						finishFunc()
 						peripheral.disconnectAsync()
 							.then(function () {
-								log.error("Disconnected")
+								log.debug("Disconnected")
 							})
 					})
 			}
