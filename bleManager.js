@@ -93,6 +93,7 @@ class BLEManager {
 						return peripheral.disconnectAsync()
 					})
 					.timeout(performBLEActionTimeout)
+					.catch(function () { })
 					.finally(function () {
 						foundPeripherals -= 1
 						finishFunc()
