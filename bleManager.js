@@ -60,7 +60,7 @@ class BLEManager {
 					.timeout(performBLEActionTimeout)
 					.delay(operationsDelayMilliseconds)
 					.then(function () {
-						log.debug("Connected, will discover service " + serviceUUID + " and characteristic " + characteristicUUID + " for " + peripheral.advertisement.localName)
+						log.debug("Connected to " + peripheral.advertisement.localName)
 						return thisManager.readBatteryForPeripheral(peripheral)
 					})
 					.then(function (battery) {
