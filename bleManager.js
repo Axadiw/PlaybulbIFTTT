@@ -111,7 +111,7 @@ class BLEManager {
 				log.debug('advertising the following service uuid\'s: ' + peripheral.advertisement.serviceUuids);
 
 				foundPeripherals += 1
-				foundPeripheralsPromisesArray.push(processSinglePeripheralFunc(peripheral))
+				foundPeripheralsPromisesArray.push(peripheral)
 			}
 
 			thisManager.noble.on('discover', handleDiscovery)
@@ -122,12 +122,15 @@ class BLEManager {
 				timeoutOccured = true
 				thisManager.noble.stopScanning()
 				thisManager.noble.removeListener("discover", handleDiscovery)
-				finishFunc()
-
-				Promise.each(foundPeripheralsPromisesArray, function (result) {
-					log.debug("Processed")
+				
+				Promise.each(foundPeripheralsPromisesArray, function (peripheral) {					
+					log.debug("Started processing " + peripheral)
+					return processSinglePeripheralFunc(peripheral)
 				})
 					.catch(function () { })
+
+				finishFunc()
+
 
 			}, scanningForPeripheralsTime);
 		})
